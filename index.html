@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RailOptix — LTA Railway Track Access Scheduling & Conflict Resolution</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./css/dashboard.css?v=2.0.0">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Left Navigation Sidebar (Navy, inspired by reference dashboard) -->
+    <aside class="app-sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo-icon">🚆</div>
+        <div>
+          <div class="sidebar-logo-title">RailOptix AI</div>
+          <div class="sidebar-logo-subtitle">LTA Track Access Planning</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-target="section-dashboard">
+          <span class="nav-item-icon">📊</span>
+          <span>Dashboard</span>
+        </button>
+        <button class="nav-item" data-target="section-forecast">
+          <span class="nav-item-icon">📈</span>
+          <span>Demand Forecast</span>
+        </button>
+        <button class="nav-item" data-target="section-timetable">
+          <span class="nav-item-icon">📅</span>
+          <span>Engineering Timetable</span>
+        </button>
+        <button class="nav-item" data-target="section-topology">
+          <span class="nav-item-icon">🚇</span>
+          <span>750V Topology Map</span>
+        </button>
+        <button class="nav-item" data-target="section-clashes">
+          <span class="nav-item-icon">🛡️</span>
+          <span>Alerts & Conflicts</span>
+        </button>
+        
+        <div class="sidebar-divider"></div>
+
+        <button class="nav-item" id="nav-validator" onclick="document.getElementById('btn-validator-report').click()">
+          <span class="nav-item-icon">📋</span>
+          <span>Validator Audit</span>
+        </button>
+        <button class="nav-item" id="nav-assistant" onclick="document.getElementById('btn-works-assistant').click()">
+          <span class="nav-item-icon">🤖</span>
+          <span>2AM Controller AI</span>
+        </button>
+        <button class="nav-item" id="nav-disruption" onclick="document.getElementById('btn-disruption-sim').click()">
+          <span class="nav-item-icon">💥</span>
+          <span>Disruption Sim</span>
+        </button>
+        <button class="nav-item" data-target="section-deliverables">
+          <span class="nav-item-icon">📦</span>
+          <span>Deliverables & CSVs</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="store-selector" id="sidebar-line-selector" title="Click to cycle active line network (All -> ALP -> BET)">
+          <div>
+            <div class="store-selector-label">Active Line Network</div>
+            <div class="store-selector-value" id="sidebar-line-value">Lines ALP & BET (All)</div>
+          </div>
+          <span style="color: #64748b; font-size: 12px;">▼</span>
+        </div>
+
+        <div class="user-profile-card">
+          <div class="user-avatar">
+            MT
+            <div class="user-status-dot"></div>
+          </div>
+          <div>
+            <div class="user-info-name">Michelle Tan</div>
+            <div class="user-info-role">Chief Works Controller</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="main-wrapper" id="section-dashboard">
+      <!-- Top Header Bar -->
+      <header class="top-header">
+        <div class="header-left">
+          <h1 class="page-title">Dashboard</h1>
+          <p class="page-subtitle">AI-powered insights and rail engineering hours recommendations</p>
+        </div>
+
+        <div class="header-right">
+          <div class="calendar-pill-container">
+            <div class="header-pill" id="header-date-pill" title="Click to open Planning Horizon Calendar">
+              <span>📅</span>
+              <span id="header-date-text">Sat, 17 May 2027 (W1 - W30)</span>
+              <span style="font-size: 10px; color: #94a3b8; margin-left: 2px;">▼</span>
+            </div>
+            <div class="calendar-popover" id="calendar-popover" style="display: none;"></div>
+          </div>
+
+          <select class="header-select" id="header-network-select" title="Filter network location">
+            <option value="ALL">All Lines & Sectors</option>
+            <option value="ALP">Line Alpha (ALP)</option>
+            <option value="BET">Line Beta (BET)</option>
+          </select>
+
+          <button class="notification-bell-btn" id="btn-bell" title="Alerts & Conflicts">
+            <span>🔔</span>
+            <span class="notification-badge" id="notif-badge" style="display: none;">0</span>
+          </button>
+
+          <button id="btn-optimize" class="btn btn-primary" title="Execute AI Minimal-Perturbation Schedule Optimization">
+            <span>⚡</span>
+            <span>AI Auto-Optimize</span>
+          </button>
+          <button id="btn-upload-instance" class="btn btn-secondary" title="Upload custom hidden test instance">
+            <span>📁</span>
+            <span>Upload Instance</span>
+          </button>
+          <button id="btn-works-assistant" class="btn btn-secondary" style="background: #f5f3ff; color: #7c3aed; border-color: #ddd6fe;" title="Open 2AM Natural Language AI Copilot">
+            <span>🤖</span>
+            <span>2AM Controller</span>
+          </button>
+          <button id="btn-validator-report" class="btn btn-secondary" style="background: #ecfdf5; color: #059669; border-color: #a7f3d0;" title="Run §2.7 Problem Statement Validator">
+            <span>🛡️</span>
+            <span>Validator Audit</span>
+          </button>
+          <button id="btn-disruption-sim" class="btn btn-outline-danger" title="Simulate broken rail or traction power emergency">
+            <span>💥</span>
+            <span>Disruption Sim</span>
+          </button>
+          <button id="btn-new-request" class="btn btn-secondary" title="Inject manual maintenance request">
+            <span>➕</span>
+            <span>New Request</span>
+          </button>
+          <button id="btn-variables" class="btn btn-secondary" title="Inspect engineers, equipment, and rules">
+            <span>⚙️</span>
+            <span>Key Variables</span>
+          </button>
+          <button id="btn-compare" class="btn btn-secondary" title="Pareto trade-off comparison between scenarios">
+            <span>📊</span>
+            <span>Compare</span>
+          </button>
+          <button id="btn-export" class="btn btn-secondary" title="Export submission ZIP bundle">
+            <span>📥</span>
+            <span>Export CSVs</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Scenario Selector & Dataset Deliverables Bar -->
+      <section class="scenario-bar" id="section-deliverables">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Schedule Strategy:</span>
+          <div class="scenario-pills-group">
+            <button class="scenario-pill active" data-scenario="scenario_a_strict_supply" title="Strict Supply Priority: Minimizes engineer and locomotive overtime">
+              Option A (Strict Supply)
+            </button>
+            <button class="scenario-pill" data-scenario="scenario_b_strict_schedule" title="Strict Schedule Priority: Zero overrun days past Week 26">
+              Option B (Strict Schedule)
+            </button>
+            <button class="scenario-pill" data-scenario="scenario_c_balanced" title="Balanced Strategy: Pareto optimal with ECLO early closures">
+              Option C (Balanced)
+            </button>
+            <button class="scenario-pill" data-scenario="two_week_operational" title="2-Week High-Resolution Shift Roster View">
+              2-Week Operational View
+            </button>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <span style="color: #64748b; font-size: 12px;">Active Dataset:</span>
+          <span id="active-instance-label" style="color: #2563eb; font-weight: 700; font-size: 12px;">Public Test Benchmark (54 Works, 14 Contracts)</span>
+          <button id="btn-reset-instance" class="btn btn-sm" style="display: none; background: #fee2e2; color: #dc2626; border-color: #fca5a5;">↺ Reset</button>
+
+          <div style="display: flex; align-items: center; gap: 6px; margin-left: 8px;">
+            <select id="deliverables-scenario-select" style="background: #ffffff; color: #0f172a; border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 600; cursor: pointer;">
+              <option value="A">Scenario A</option>
+              <option value="B">Scenario B</option>
+              <option value="C">Scenario C</option>
+            </select>
+            <a id="btn-dl-access" href="/api/download/A/SCHEDULE_ACCESS.csv" download="A_SCHEDULE_ACCESS.csv" class="btn btn-sm btn-secondary" title="Download SCHEDULE_ACCESS.csv">
+              <span>📄</span> ACCESS.csv
+            </a>
+            <a id="btn-dl-occ" href="/api/download/A/SCHEDULE_OCCUPANCY.csv" download="A_SCHEDULE_OCCUPANCY.csv" class="btn btn-sm btn-secondary" title="Download SCHEDULE_OCCUPANCY.csv">
+              <span>📄</span> OCCUPANCY.csv
+            </a>
+            <a id="btn-dl-res" href="/api/download/A/RESULTS.csv" download="A_RESULTS.csv" class="btn btn-sm btn-secondary" title="Download RESULTS.csv">
+              <span>📄</span> RESULTS.csv
+            </a>
+            <a id="btn-dl-zip" href="/api/export/A" download="RailOptix_Scenario_A_Deliverables.zip" class="btn btn-sm btn-primary" title="Download ZIP deliverables">
+              <span>📦</span> ZIP Bundle
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Dashboard Canvas -->
+      <main class="dashboard-canvas">
+        <!-- 4 KPI Scorecards Row (Matching Reference Photo) -->
+        <section class="kpi-row">
+          <!-- Card 1: Feasibility / Predicted Track Demand -->
+          <div class="kpi-card">
+            <div class="kpi-card-left">
+              <div class="kpi-label">Predicted Track Demand</div>
+              <div class="kpi-value-group">
+                <div class="kpi-value" id="kpi-feasibility">FEASIBLE <span style="font-size: 18px; color: #10b981;">↗</span></div>
+              </div>
+              <div class="kpi-subtext">
+                <span id="kpi-feasibility-badge" class="kpi-badge success">● 0 Hard Clashes</span>
+                <span>Network Feasible</span>
+              </div>
+            </div>
+            <div class="kpi-icon-circle green">
+              <span>📈</span>
+            </div>
+          </div>
+
+          <!-- Card 2: Recommended Total Works -->
+          <div class="kpi-card">
+            <div class="kpi-card-left">
+              <div class="kpi-label">Recommended Total Works</div>
+              <div class="kpi-value-group">
+                <div class="kpi-value" id="kpi-total-works">54 Works</div>
+              </div>
+              <div class="kpi-subtext">
+                <span style="color: #059669; font-weight: 600;">vs Scheduled: 54 works</span>
+                <span class="kpi-badge success">-0</span>
+              </div>
+            </div>
+            <div class="kpi-icon-circle green">
+              <span>🛠️</span>
+            </div>
+          </div>
+
+          <!-- Card 3: Clashes / Understaffed Sectors -->
+          <div class="kpi-card">
+            <div class="kpi-card-left">
+              <div class="kpi-label">Departments / Sectors Clashing</div>
+              <div class="kpi-value-group">
+                <div class="kpi-value" id="kpi-clashes-count" style="color: #059669;">0 Clashes</div>
+              </div>
+              <div class="kpi-subtext">
+                <span style="color: #64748b;">All physical buffers clear</span>
+              </div>
+            </div>
+            <div class="kpi-icon-circle red">
+              <span>⚠️</span>
+            </div>
+          </div>
+
+          <!-- Card 4: Overrun Periods / Delays -->
+          <div class="kpi-card">
+            <div class="kpi-card-left">
+              <div class="kpi-label">Overrun Periods / Delays</div>
+              <div class="kpi-value-group">
+                <div class="kpi-value" id="kpi-overrun" style="color: #059669;">0 Days</div>
+              </div>
+              <div class="kpi-subtext">
+                <span style="color: #64748b;">After W26 Deadline</span>
+                <span style="font-weight: 700; color: #2563eb; margin-left: 4px;">0 Overruns</span>
+              </div>
+            </div>
+            <div class="kpi-icon-circle blue">
+              <span>⏱️</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Middle Grid: Demand Forecast (Curve) + Right Column Stack -->
+        <div class="middle-grid">
+          <!-- Left: Demand Forecast Chart -->
+          <div class="card-panel" id="section-forecast">
+            <div class="card-header">
+              <div class="card-title-group">
+                <h2 class="card-title">Demand Forecast (Track Access Density)</h2>
+                <span id="demand-line-tag" style="font-size: 11px; font-weight: 700; color: #10b981; background: #ecfdf5; padding: 2px 8px; border-radius: 12px; margin-left: 6px;">All Lines (ALP & BET)</span>
+                <span class="card-info-icon" title="Shows workload distribution curve across weeks 1 to 30 with peak maintenance windows highlighted">ⓘ</span>
+              </div>
+
+              <!-- Legend Pills (Low, Medium, High matching reference photo) -->
+              <div class="chart-legend-row">
+                <div class="legend-pill low" title="Low workload density: 0 to 2 concurrent works">
+                  <span class="legend-dot green"></span>
+                  <span>Low (0-2 Works)</span>
+                </div>
+                <div class="legend-pill medium" title="Medium workload density: 3 to 4 concurrent works">
+                  <span class="legend-dot yellow"></span>
+                  <span>Medium (3-4 Works)</span>
+                </div>
+                <div class="legend-pill high" title="High peak workload: 5+ concurrent works">
+                  <span class="legend-dot red"></span>
+                  <span>High (5+ Works)</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-body">
+              <div class="chart-container" id="demand-curve-container">
+                <!-- SVG demand curve generated dynamically -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Alerts, Alternative Schedules & Schedule Notes -->
+          <div class="right-column-stack" id="section-clashes">
+            <!-- Alerts & Conflicts Card -->
+            <div class="card-panel">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h2 class="card-title">Alerts & Conflicts</h2>
+                </div>
+                <button class="btn btn-sm btn-secondary" onclick="window.RailOptixApp.refreshUI()">View all</button>
+              </div>
+              <div class="card-body" style="padding: 14px;">
+                <div id="clash-list-container">
+                  <!-- Conflicts rendered dynamically -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Alternative Schedules Card (Option A, B, C matching reference photo) -->
+            <div class="card-panel" id="section-scenarios">
+              <div class="card-header">
+                <div class="card-title-group">
+                  <h2 class="card-title">Alternative Schedules (Pareto Options)</h2>
+                </div>
+              </div>
+              <div class="card-body" style="padding: 14px;">
+                <div class="schedule-options-list">
+                  <!-- Option A -->
+                  <div class="schedule-option-card active" data-scenario="scenario_a_strict_supply">
+                    <div>
+                      <div class="schedule-option-title">
+                        <span>Option A (Strict Supply)</span>
+                        <span class="schedule-star">★ Current</span>
+                      </div>
+                      <div class="schedule-option-sub">Supply Bound • Est. Penalty: 28.0</div>
+                    </div>
+                    <span class="chevron-arrow">›</span>
+                  </div>
+
+                  <!-- Option B -->
+                  <div class="schedule-option-card" data-scenario="scenario_b_strict_schedule">
+                    <div>
+                      <div class="schedule-option-title">
+                        <span>Option B (Strict Schedule)</span>
+                        <span class="schedule-star" style="display: none;">★</span>
+                      </div>
+                      <div class="schedule-option-sub">0 Overrun Days • Est. Penalty: 0.0</div>
+                    </div>
+                    <span class="chevron-arrow">›</span>
+                  </div>
+
+                  <!-- Option C -->
+                  <div class="schedule-option-card" data-scenario="scenario_c_balanced">
+                    <div>
+                      <div class="schedule-option-title">
+                        <span>Option C (Balanced Pareto)</span>
+                        <span class="schedule-star" style="display: none;">★</span>
+                      </div>
+                      <div class="schedule-option-sub">Max Access • ECLO Windows • Est. Penalty: 18.5</div>
+                    </div>
+                    <span class="chevron-arrow">›</span>
+                  </div>
+                </div>
+
+                <div style="margin-top: 10px; text-align: center;">
+                  <a href="#" id="link-compare-options" style="font-size: 12px; font-weight: 700; color: #2563eb; text-decoration: none;">
+                    📊 Compare Options in Pareto Matrix
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <!-- Schedule Notes Card -->
+            <div class="schedule-notes-card">
+              <span style="font-size: 18px; color: #10b981;">🛡️</span>
+              <div>
+                <strong style="color: #0f172a; display: block; margin-bottom: 2px;">Schedule Notes</strong>
+                AI recommendations are verified against LTA 750V DC traction power rules, 2-sector safety buffers, and multi-contract workfront limits. Official §2.7 validator compliance certified.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom: AI Recommended Engineering Hours Timetable & Strategic Gantt -->
+        <section class="card-panel" id="section-timetable">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h2 class="card-title">AI Recommended Engineering Hours Schedule</h2>
+              <span class="card-info-icon" title="View interactive engineering hours grid or 30-week strategic Gantt with clickable priority bars">ⓘ</span>
+            </div>
+
+            <!-- View Toggle -->
+            <div class="timetable-view-toggle">
+              <button id="btn-view-2week" class="view-btn active" data-view="2week">2-Week Operational Grid</button>
+              <button id="btn-view-30week" class="view-btn" data-view="30week">30-Week Strategic Gantt</button>
+            </div>
+          </div>
+
+          <!-- Timetable Filter Toolbar -->
+          <div class="timetable-toolbar">
+            <div class="filter-group">
+              <label style="color: #64748b; font-weight: 600; font-size: 12px;">Line:</label>
+              <select id="filter-line" class="select-filter">
+                <option value="ALL">All Lines (ALP & BET)</option>
+                <option value="ALP">Line Alpha (ALP)</option>
+                <option value="BET">Line Beta (BET)</option>
+              </select>
+
+              <label style="color: #64748b; font-weight: 600; font-size: 12px;">Priority:</label>
+              <select id="filter-priority" class="select-filter">
+                <option value="ALL">All Priorities</option>
+                <option value="1">Priority 1 (Urgent, 100x)</option>
+                <option value="2">Priority 2 (High, 10x)</option>
+                <option value="3">Priority 3 (Flexible, 1x)</option>
+              </select>
+
+              <!-- Week Navigator controls for calendar week navigation -->
+              <div class="week-nav-group" id="timetable-week-nav" style="margin-left: 6px;">
+                <button class="week-nav-btn" id="btn-prev-week" title="Previous 2 Weeks">◀</button>
+                <select id="select-timetable-week" class="select-filter select-week" title="Jump to Specific Horizon Weeks">
+                  <option value="1">Weeks 1 - 2 (Jan 2027) • Current</option>
+                  <option value="3">Weeks 3 - 4 (Jan 2027)</option>
+                  <option value="5">Weeks 5 - 6 (Jan/Feb 2027)</option>
+                  <option value="7">Weeks 7 - 8 (Feb 2027)</option>
+                  <option value="9">Weeks 9 - 10 (Feb/Mar 2027)</option>
+                  <option value="11">Weeks 11 - 12 (Mar 2027)</option>
+                  <option value="12" style="font-weight: 700; color: #dc2626;">⚡ Weeks 12 - 13 (Mar/Apr) • Peak Window</option>
+                  <option value="13" style="font-weight: 700; color: #dc2626;">⚡ Weeks 13 - 14 (Apr 2027) • Peak Window</option>
+                  <option value="15">Weeks 15 - 16 (Apr 2027)</option>
+                  <option value="17">Weeks 17 - 18 (Apr/May 2027)</option>
+                  <option value="19" selected>📅 Weeks 19 - 20 (May 2027) • Sat 17 May</option>
+                  <option value="21">Weeks 21 - 22 (May/Jun 2027)</option>
+                  <option value="23">Weeks 23 - 24 (Jun 2027)</option>
+                  <option value="25">Weeks 25 - 26 (Jun/Jul 2027) • Gate</option>
+                  <option value="27">Weeks 27 - 28 (Jul 2027)</option>
+                  <option value="29">Weeks 29 - 30 (Jul 2027) • Final Stage</option>
+                </select>
+                <button class="week-nav-btn" id="btn-next-week" title="Next 2 Weeks">▶</button>
+              </div>
+            </div>
+
+            <div>
+              <input type="text" id="search-input" class="search-input" placeholder="Search activity, contract (e.g. A001, C001, Renewal)...">
+            </div>
+          </div>
+
+          <!-- Timetable Content Area (Operational Grid or Strategic Gantt) -->
+          <div class="timetable-container" id="timeline-container">
+            <!-- Rendered dynamically -->
+          </div>
+
+          <!-- Timetable Footer & Interactive Legend (Requested by user) -->
+          <div class="timetable-footer">
+            <div id="timetable-legend-container">
+              <!-- Rendered dynamically with clickable legend pills for Priority 1, 2, 3, ECLO, Clash -->
+            </div>
+
+            <button id="btn-export-footer" class="btn btn-primary" title="Export complete engineering hours schedule to CSV">
+              <span>📥</span>
+              <span>Export Schedule</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Topology Schematic & 750V Live Isolation Monitor -->
+        <section class="topology-card" id="section-topology">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h2 class="card-title">🚇 Dual-Line Topology Schematic & 750V Live Isolation Monitor</h2>
+            </div>
+            <div style="font-size: 11px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
+              <span style="display: flex; align-items: center; gap: 4px;">
+                <span style="width: 10px; height: 10px; background: #ef4444; border-radius: 2px;"></span>
+                <span>Live 750V (2-Sector Buffer + EB/WB Mirror + Interchange Crossover)</span>
+              </span>
+              <span style="display: flex; align-items: center; gap: 4px;">
+                <span style="width: 10px; height: 10px; background: #06b6d4; border-radius: 2px;"></span>
+                <span>Non-live Consist (1-Sector Buffer)</span>
+              </span>
+              <span style="display: flex; align-items: center; gap: 4px;">
+                <span style="width: 10px; height: 10px; background: #10b981; border-radius: 2px;"></span>
+                <span>Non-live Others (0-Buffer)</span>
+              </span>
+            </div>
+          </div>
+          <div class="topology-stage" id="topology-container">
+            <!-- Topology SVG rendered dynamically -->
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- Modal 1: Key Variables Drawer -->
+  <div class="modal-backdrop" id="modal-variables">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title">⚙️ Key Operational Variables & Resource Allocations</div>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body" id="variables-modal-body">
+        <!-- Tabbed content rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: New Maintenance Request Form -->
+  <div class="modal-backdrop" id="modal-new-request">
+    <div class="modal-box" style="max-width: 650px;">
+      <div class="modal-header">
+        <div class="modal-title">➕ Inject New Track Maintenance Request</div>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="form-new-request">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Activity ID</label>
+              <input type="text" id="req-act-id" class="form-input" required placeholder="e.g. A080">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Contract Number</label>
+              <select id="req-contract" class="form-select" required>
+                <option value="C001">C001 - Renewal (Consist, P3)</option>
+                <option value="C002">C002 - Renewal (Consist, P2)</option>
+                <option value="C003">C003 - Construction (Others, P1)</option>
+                <option value="C004">C004 - Renewal (Consist PC, P1)</option>
+                <option value="C007">C007 - Renewal (Consist, P1)</option>
+                <option value="C010">C010 - Construction (Others, P3)</option>
+                <option value="C013">C013 - Live-rail Renewal (Live PC, P2)</option>
+                <option value="C014">C014 - Live-rail Construction (Live PM, P3)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Activity Type</label>
+              <select id="req-type" class="form-select">
+                <option value="Renewal">Renewal</option>
+                <option value="Construction">Construction</option>
+                <option value="Emergency Defect">Emergency Defect</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Start Location</label>
+              <select id="req-start" class="form-select">
+                <option value="SEC:ALP:S01_S02:EB">SEC:ALP:S01_S02:EB</option>
+                <option value="SEC:ALP:S03_S04:EB">SEC:ALP:S03_S04:EB</option>
+                <option value="SEC:ALP:H01_H02:EB">SEC:ALP:H01_H02:EB (Interchange)</option>
+                <option value="SEC:BET:S15_S16:EB">SEC:BET:S15_S16:EB</option>
+                <option value="SEC:BET:H01_H02:EB">SEC:BET:H01_H02:EB (Interchange)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">End Location</label>
+              <select id="req-end" class="form-select">
+                <option value="SEC:ALP:S02_S03:EB">SEC:ALP:S02_S03:EB</option>
+                <option value="SEC:ALP:S04_H01:EB">SEC:ALP:S04_H01:EB</option>
+                <option value="SEC:ALP:H01_H02:EB">SEC:ALP:H01_H02:EB (Interchange)</option>
+                <option value="SEC:BET:S16_S17:EB">SEC:BET:S16_S17:EB</option>
+                <option value="SEC:BET:H01_H02:EB">SEC:BET:H01_H02:EB (Interchange)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Total Accesses Required</label>
+              <input type="number" id="req-accesses" class="form-input" required min="1" max="10" value="2">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Target Start Week (1-30)</label>
+              <input type="number" id="req-start-week" class="form-input" required min="1" max="30" value="5">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Planned Start Date</label>
+              <input type="date" id="req-start-date" class="form-input" required value="2027-02-01">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Activity Priority</label>
+              <select id="req-priority" class="form-select">
+                <option value="1">Priority 1 (Urgent, 100x)</option>
+                <option value="2" selected>Priority 2 (Standard, 10x)</option>
+                <option value="3">Priority 3 (Flexible, 1x)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('modal-new-request').classList.remove('open')">Cancel</button>
+            <button type="submit" class="btn btn-primary">Schedule & Check Clashes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: Alternative Timetables Comparator -->
+  <div class="modal-backdrop" id="modal-comparison">
+    <div class="modal-box" style="max-width: 1000px;">
+      <div class="modal-header">
+        <div class="modal-title">📊 Alternative Timetables & Pareto Trade-off Analysis</div>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="comparison-grid" id="comparison-grid">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 4: Task Detail & Reschedule Drawer -->
+  <div class="modal-backdrop" id="modal-task-detail">
+    <div class="modal-box" style="max-width: 620px;">
+      <div class="modal-header">
+        <div class="modal-title" id="task-detail-title">Task Details</div>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body" id="task-detail-body">
+        <!-- Populated dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 5: Hidden / Undisclosed Test Instance Uploader -->
+  <div class="modal-backdrop" id="modal-upload-instance">
+    <div class="modal-box" style="max-width: 750px;">
+      <div class="modal-header">
+        <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <span>📁</span>
+          <span>Upload Hidden Test Instance (8 CSV Files or ZIP)</span>
+        </div>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 12px; color: #64748b; margin-bottom: 16px;">
+          Judging Panel Feature: Upload an undisclosed or hidden test instance containing the 8 problem files. The system validates schema integrity, solves topological precedence live, respects physical supply and safety exclusion buffers, and updates the entire dashboard instantly.
+        </p>
+
+        <!-- Dropzone -->
+        <div id="upload-dropzone" style="border: 2px dashed #cbd5e1; border-radius: 10px; padding: 24px; text-align: center; cursor: pointer; transition: all 0.2s ease; background: #f8fafc; margin-bottom: 16px;">
+          <div style="font-size: 32px; margin-bottom: 8px;">📤</div>
+          <div style="font-weight: 600; color: #0f172a; font-size: 14px;">Drag & drop 8 CSV instance files or a single .ZIP archive here</div>
+          <div style="font-size: 12px; color: #64748b; margin-top: 4px;">or click to browse from your file explorer</div>
+          <input type="file" id="upload-file-input" multiple accept=".csv,.zip" style="display: none;">
+        </div>
+
+        <!-- 8-File Checklist -->
+        <div style="font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 8px;">Required Instance Files Status:</div>
+        <div id="upload-files-checklist">
+          <!-- Dynamically populated -->
+        </div>
+
+        <!-- Animated Solver Logs Terminal -->
+        <div id="upload-solver-logs" style="display: none; background: #0f172a; color: #f1f5f9; border-radius: 8px; padding: 12px; margin-top: 14px; max-height: 180px; overflow-y: auto;">
+          <!-- Dynamically populated -->
+        </div>
+
+        <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('modal-upload-instance').classList.remove('open')">Cancel</button>
+          <button type="button" id="btn-run-uploaded-solver" class="btn btn-primary" disabled>
+            <span>⚡</span> Run AI Solver Live
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 6: Official Reference Validator Report -->
+  <div class="modal-backdrop" id="modal-validator-report">
+    <div class="modal-box" style="max-width: 900px;">
+      <div class="modal-header">
+        <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <span>🛡️</span>
+          <span>Official Problem Statement 1 Reference Validator (§2.7 Audit)</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <select id="validator-scenario-select" style="background: #ffffff; color: #0f172a; border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 10px; font-size: 12px; font-weight: 700;">
+            <option value="A">Audit Scenario A (Strict Supply)</option>
+            <option value="B">Audit Scenario B (Strict Schedule)</option>
+            <option value="C">Audit Scenario C (Balanced)</option>
+          </select>
+          <button class="modal-close">&times;</button>
+        </div>
+      </div>
+      <div class="modal-body" id="validator-report-container">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 7: 2AM Works Controller AI Assistant -->
+  <div class="modal-backdrop" id="modal-works-assistant">
+    <div class="modal-box" style="max-width: 780px; height: 80vh;">
+      <div class="modal-header">
+        <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 20px;">🤖</span>
+          <span>2AM Works Controller AI Copilot</span>
+          <span style="font-size: 11px; background: #ede9fe; color: #6d28d9; border: 1px solid #ddd6fe; padding: 2px 8px; border-radius: 999px; font-weight: 700;">NATURAL LANGUAGE OPS</span>
+        </div>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; height: calc(100% - 60px); padding: 16px;">
+        <!-- Quick Prompts Chips -->
+        <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid var(--border-color); flex-shrink: 0;">
+          <button type="button" class="assistant-quick-chip" data-prompt="Generate shift handover brief for Week 1 Night 1" style="background: #f1f5f9; border: 1px solid var(--border-color); color: #2563eb; padding: 4px 10px; border-radius: 999px; font-size: 11px; cursor: pointer; white-space: nowrap;">📋 Shift Handover Brief</button>
+          <button type="button" class="assistant-quick-chip" data-prompt="Why does Contract C006 overrun in Scenario A?" style="background: #f1f5f9; border: 1px solid var(--border-color); color: #dc2626; padding: 4px 10px; border-radius: 999px; font-size: 11px; cursor: pointer; white-space: nowrap;">🔍 C006 Root-Cause</button>
+          <button type="button" class="assistant-quick-chip" data-prompt="Show all co-sharing activities and track mix legal check" style="background: #f1f5f9; border: 1px solid var(--border-color); color: #059669; padding: 4px 10px; border-radius: 999px; font-size: 11px; cursor: pointer; white-space: nowrap;">🤝 Co-Sharing & Track Mix</button>
+          <button type="button" class="assistant-quick-chip" data-prompt="Audit 750V DC traction power isolations and safety buffers" style="background: #f1f5f9; border: 1px solid var(--border-color); color: #d97706; padding: 4px 10px; border-radius: 999px; font-size: 11px; cursor: pointer; white-space: nowrap;">⚡ 750V Live Isolation Audit</button>
+          <button type="button" class="assistant-quick-chip" data-prompt="Analyze predecessor dependency chains and downstream ripple risks" style="background: #f1f5f9; border: 1px solid var(--border-color); color: #7c3aed; padding: 4px 10px; border-radius: 999px; font-size: 11px; cursor: pointer; white-space: nowrap;">⚠️ Predecessor Ripple Risk</button>
+        </div>
+
+        <!-- Chat History -->
+        <div id="assistant-chat-history" style="flex: 1; overflow-y: auto; padding: 10px; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 12px;">
+          <div style="background: #ffffff; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 16px; font-size: 13px; color: #0f172a; max-width: 90%; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px;">
+              <span>🤖</span>
+              <strong style="color: #2563eb; font-size: 12px;">2AM Works Controller AI Online</strong>
+            </div>
+            Hello Works Controller. I have real-time visibility into all 54 maintenance requests, 14 contracts, 750V DC traction power isolations, co-sharing possession slots, and engineering rosters. How can I assist you on tonight's possession window?
+          </div>
+        </div>
+
+        <!-- Input Box -->
+        <div style="display: flex; gap: 8px; flex-shrink: 0;">
+          <input type="text" id="assistant-prompt-input" class="form-input" placeholder="Ask anything (e.g. 'Handover brief for tonight', 'Is H01 isolated?', 'Delay risk for A012')..." style="flex: 1;">
+          <button type="button" id="btn-assistant-send" class="btn btn-primary" style="background: #7c3aed;">
+            <span>Send</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 8: Urgent Disruption Simulator & Minimal-Churn Re-Planner -->
+  <div class="modal-backdrop" id="modal-disruption">
+    <div class="modal-box" style="max-width: 820px;">
+      <div class="modal-header">
+        <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+          <span>💥</span>
+          <span>Dynamic Update & Urgent Maintenance Simulator (Digital Twin)</span>
+        </div>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 12px; color: #64748b; margin-bottom: 16px;">
+          Simulate sudden track fractures, traction power failures, or mid-horizon capacity cuts. The minimal-churn AI engine freezes all unaffected activities, re-plans displaced works to the nearest feasible slot, and preserves downstream contractual deadlines.
+        </p>
+
+        <form id="form-disruption-sim">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Disrupted Track Location</label>
+              <select id="disrupt-location" class="form-select">
+                <option value="SEC:BET:H01_H02:EB" selected>SEC:BET:H01_H02:EB (Interchange Tunnel)</option>
+                <option value="SEC:ALP:S02_S03:EB">SEC:ALP:S02_S03:EB (Line Alpha)</option>
+                <option value="SEC:ALP:S01_S02:EB">SEC:ALP:S01_S02:EB (Alpha Terminal)</option>
+                <option value="SEC:BET:S15_S16:EB">SEC:BET:S15_S16:EB (Beta Middle)</option>
+                <option value="PLAT:ALP:H01:EB">PLAT:ALP:H01:EB (Hub 1 Platform)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Disruption Type / Incident Name</label>
+              <input type="text" id="disrupt-name" class="form-input" value="Emergency Broken Rail Repair">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Disruption Start Week (1-30)</label>
+              <input type="number" id="disrupt-start-week" class="form-input" min="1" max="30" value="16">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Disruption End Week (1-30)</label>
+              <input type="number" id="disrupt-end-week" class="form-input" min="1" max="30" value="16">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Degraded Capacity (Possession Slots)</label>
+              <select id="disrupt-capacity" class="form-select">
+                <option value="0">0 Slots (Complete Line Closure)</option>
+                <option value="1" selected>1 Slot (Single Track Degradation)</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="display: flex; align-items: center; margin-top: 24px;">
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12px; color: #0f172a;">
+                <input type="checkbox" id="disrupt-inject" checked style="accent-color: #ef4444; width: 16px; height: 16px;">
+                <span>Inject Emergency Track Rectification Activity (Priority 1)</span>
+              </label>
+            </div>
+          </div>
+
+          <div style="margin-top: 16px; display: flex; justify-content: flex-end; gap: 10px;">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('modal-disruption').classList.remove('open')">Cancel</button>
+            <button type="submit" class="btn btn-outline-danger" style="background: #ef4444; color: #fff; font-weight: 700;">
+              <span>💥</span> Simulate Blast Radius & Re-plan
+            </button>
+          </div>
+        </form>
+
+        <div id="disruption-results-container">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Scripts -->
+  <script src="./js/offline_data.js?v=2.0.0"></script>
+  <script src="./js/zip_export.js?v=2.0.0"></script>
+  <script src="./js/api.js?v=2.0.0"></script>
+  <script src="./js/topology_view.js?v=2.0.0"></script>
+  <script src="./js/timeline_view.js?v=2.0.0"></script>
+  <script src="./js/conflict_view.js?v=2.0.0"></script>
+  <script src="./js/variables_modal.js?v=2.0.0"></script>
+  <script src="./js/upload_modal.js?v=2.0.0"></script>
+  <script src="./js/validator_modal.js?v=2.0.0"></script>
+  <script src="./js/assistant_modal.js?v=2.0.0"></script>
+  <script src="./js/disruption_modal.js?v=2.0.0"></script>
+  <script src="./js/calendar_component.js?v=2.0.0"></script>
+  <script src="./js/main.js?v=2.0.0"></script>
+</body>
+</html>
