@@ -447,6 +447,7 @@ def apply_disruption(payload: Dict[str, Any] = Body(...)):
 
 STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static")
 if os.path.exists(STATIC_DIR):
+    app.mount("/static", StaticFiles(directory=STATIC_DIR, html=True), name="static_dir")
     app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
 
 def main():
